@@ -1,0 +1,66 @@
+# Реестр оповещений «АДИМАРИП»: PostgreSQL 16 + ASP.NET Core 8 API + React/Vite UI
+#
+#   UI      -> http://localhost:8080
+#   API     -> http://localhost:8081
+#   Swagger -> http://localhost:8081/swagger
+#   Health  -> http://localhost:8081/api/health
+#
+# Запуск: docker compose up --build
+# Значения берутся из файла .env (шаблон: .env.example); без него используются
+# демонстрационные значения по умолчанию. Для чего-либо, кроме учебного стенда, их надо менять.
+
+name: adimarip
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-adimarip}
+      POSTGRES_USER: ${POSTGRES_USER:-adimarip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adimarip_dev_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    # Порт БД наружу не публикуется: API ходит к ней по внутренней сети по имени "db".
+    # Для доступа с хоста добавьте:  ports: ["127.0.0.1:5432:5432"]
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        API_DLL: ${API_DLL:-Adimarip.Api.dll}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Development включает Swagger UI по умолчанию в стандартном шаблоне ASP.NET Core.
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8081
+      ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB:-adimarip};Username=${POSTGRES_USER:-adimarip};Password=${POSTGRES_PASSWORD:-adimarip_dev_password}
+      Jwt__Key: ${JWT_KEY:-dev-only-jwt-signing-key-change-me-0123456789}
+      Jwt__ExpiresMinutes: ${JWT_EXPIRES_MINUTES:-60}
+      Cors__AllowedOrigins__0: http://localhost:8080
+    ports:
+      - "8081:8081"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Адрес API зашивается в сборку Vite: запросы идут из браузера пользователя.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8081}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
