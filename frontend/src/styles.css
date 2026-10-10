@@ -1,0 +1,3 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #f7f9fc; color: #182b3c; }
+.app { padding: 3rem; }
