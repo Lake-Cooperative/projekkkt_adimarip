@@ -22,3 +22,12 @@ footer { padding: 28px 7%; color: #718091; border-top: 1px solid #e5edf1; }
 .panel-row { display: flex; justify-content: space-between; padding: 13px 0; font-size: 12px; }
 .panel-row strong { text-align: right; }
 @media (max-width: 850px) { .hero { grid-template-columns: 1fr; } }
+
+.hero-actions { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin-top: 30px; }
+.hero-actions a { color: #176e79; font-weight: 700; font-size: 14px; }
+.health-pill { display: inline-flex; gap: 10px; align-items: center; padding: 12px 16px; border-radius: 50px; background: #ebf0f4; color: #546478; font-size: 13px; font-weight: 700; }
+.health-dot { width: 9px; height: 9px; border-radius: 50%; background: #8295a4; }
+.health-online { background: #e2f5ed; color: #237354; }
+.health-online .health-dot { background: #2d9e6b; }
+.health-offline { background: #fcebe9; color: #a64b43; }
+.health-offline .health-dot { background: #d85c50; }
