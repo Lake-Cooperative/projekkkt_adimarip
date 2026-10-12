@@ -55,6 +55,14 @@ export function App() {
             <div className="panel-row"><span>Реестр</span><strong>На следующем этапе</strong></div>
           </div>
         </section>
+        <section className="next-section" aria-labelledby="next-title">
+          <div className="section-head"><span className="eyebrow">ДАЛЬШЕ ПО ПЛАНУ</span><h2 id="next-title">Будущие возможности</h2></div>
+          <div className="feature-grid">
+            <article className="feature"><span className="feature-number">01</span><h3>Адресаты</h3><p>Карточки адресатов и их контактные данные.</p><span className="soon">Запланировано</span></article>
+            <article className="feature"><span className="feature-number">02</span><h3>Оповещения</h3><p>Регистрация, поиск и просмотр карточек оповещений.</p><span className="soon">Запланировано</span></article>
+            <article className="feature"><span className="feature-number">03</span><h3>История и аудит</h3><p>Отслеживание статусов и действий пользователей.</p><span className="soon">Запланировано</span></article>
+          </div>
+        </section>
       </main>
       <footer>АДИМАРИП · Демонстрационный стенд, только тестовые данные</footer>
     </div>

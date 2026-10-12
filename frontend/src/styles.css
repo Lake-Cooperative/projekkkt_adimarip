@@ -31,3 +31,13 @@ footer { padding: 28px 7%; color: #718091; border-top: 1px solid #e5edf1; }
 .health-online .health-dot { background: #2d9e6b; }
 .health-offline { background: #fcebe9; color: #a64b43; }
 .health-offline .health-dot { background: #d85c50; }
+
+.next-section { padding: 78px 7% 100px; }
+.section-head h2 { font-size: 32px; }
+.feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.feature { border: 1px solid #e3eaf0; border-radius: 16px; background: white; padding: 31px; }
+.feature-number { color: #18828a; font-weight: 800; }
+.feature h3 { font-size: 20px; }
+.feature p { color: #5d7080; line-height: 1.7; }
+.soon { color: #6e8592; font-size: 12px; }
+@media(max-width: 850px) { .feature-grid { grid-template-columns: 1fr; } }
