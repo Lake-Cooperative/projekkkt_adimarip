@@ -7,16 +7,39 @@
 - ASP.NET Core 8 API с `GET /api/health`, возвращающим HTTP 200 и JSON `{"status":"ok","service":"adimarip-api"}`.
 - Swagger/OpenAPI (`/swagger` при `ASPNETCORE_ENVIRONMENT=Development`).
 - React 18 + TypeScript + Vite: оформленная главная страница и проверка состояния API.
-- Docker Compose: собирается на следующих шагах; пока нет проверенного комплексного запуска.
+- Docker Compose: UI, API и PostgreSQL 16 (БД пока не содержит автоматически созданных таблиц).
 - Существующая библиотека EF Core 8 / Npgsql подключена к API **на уровне проекта и DI**. Миграции **не выполняются автоматически**.
 - Актуализированная документация проекта и [план этапов](docs/ROADMAP.md).
 
 **Пока не реализовано:** JWT, ролевой доступ, CRUD-реестр, адресаты, статусы, история, аудит, уведомления, обращения, документы, автоматическое заполнение БД. Эти возможности описаны в документации как **будущие требования**, а не как рабочие экраны/API.
 
-## Запуск через Docker (готовится)
+## Запуск всего каркаса через Docker
 
-Frontend Dockerfile уже добавлен; Compose-файл и контейнер API ещё требуется настроить.
-После сборки инфраструктуры здесь появятся точные команды для запуска всего проекта.
+Нужен Docker Engine + Compose plugin и доступ к Docker Hub, NuGet и npm (для сборки образов).
+
+```bash
+# из корня проекта
+cp .env.example .env             # необязательно; демонстрационные значения уже в compose
+docker compose -f docker_compose.yml up --build
+```
+
+| Компонент | URL |
+|---|---|
+| Главная страница | http://localhost:8080 |
+| API | http://localhost:8081 |
+| Health check | http://localhost:8081/api/health |
+| Swagger (Development) | http://localhost:8081/swagger |
+
+Проверка:
+
+```bash
+curl -i http://localhost:8081/api/health
+bash tests/health-smoke.sh
+```
+
+Ожидается HTTP 200, `status: ok`. Если React показывает «API недоступен», проверьте, что backend запущен на порту `8081` и браузер открыт на `localhost:8080` (CORS разрешён для 8080 и 5173).
+
+Остановка: `docker compose -f docker_compose.yml down` (данные volume сохраняются). Для полного удаления **тестового** тома: `docker compose -f docker_compose.yml down -v`.
 
 ## Разработка без Docker
 
