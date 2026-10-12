@@ -33,7 +33,7 @@ export function App() {
     <div className="shell">
       <header className="topbar">
         <div className="brand"><span className="brand-mark">А</span><span>АДИМАРИП</span></div>
-        <span className="semester">Учебный проект · Семинар 2</span>
+        <span className="semester">Учебный проект · Лабораторная 2</span>
       </header>
       <main>
         <section className="hero" aria-labelledby="page-title">
