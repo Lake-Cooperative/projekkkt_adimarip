@@ -69,8 +69,8 @@ public partial class InitialDomainSchema : Migration
             constraints: table =>
             {
                 table.PrimaryKey("PK_Notices", x => x.Id);
-                table.CheckConstraint("CK_Notices_Deadline", "\\"ProcessingDeadline\\" >= \\"CreatedAt\\"");
-                table.CheckConstraint("CK_Notices_Reason_NotEmpty", "length(trim(\\"Reason\\")) > 0");
+                table.CheckConstraint("CK_Notices_Deadline", "\"ProcessingDeadline\" >= \"CreatedAt\"");
+                table.CheckConstraint("CK_Notices_Reason_NotEmpty", "length(trim(\"Reason\")) > 0");
                 table.ForeignKey("FK_Notices_Offices_OfficeId", x => x.OfficeId, "Offices", "Id", onDelete: ReferentialAction.Restrict);
                 table.ForeignKey("FK_Notices_Recipients_RecipientId", x => x.RecipientId, "Recipients", "Id", onDelete: ReferentialAction.Restrict);
             });
