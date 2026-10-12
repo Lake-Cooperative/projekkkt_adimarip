@@ -19,7 +19,10 @@
 
 ```bash
 # из корня проекта
-cp .env.example .env             # необязательно; демонстрационные значения уже в compose
+cp .env.example .env
+```
+``` bash
+# необязательно; демонстрационные значения уже в compose
 docker compose -f docker_compose.yml up --build
 ```
 
