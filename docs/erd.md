@@ -111,5 +111,28 @@ erDiagram
 
 Уникальные индексы: `Recipient.ExternalIdentifier`, `Office.Name`, `Notice.Number`, `Address.RecipientId`. В `AdimaripDbContext` заданы ограничения `Notice.ProcessingDeadline >= Notice.CreatedAt` и непустая `Notice.Reason`. Даты хранятся как `DateOnly`, время событий — `DateTimeOffset`.
 
+## Ролевая модель — будущий этап
 
-> Модель ролей и нерешённые вопросы будут дополнены в следующей итерации ERD.
+Планируется `User`/`Account` с уникальным логином, хешем пароля и ролью (`Operator`, `Manager`, `Observer`, `Automation Engineer`). Концептуальная будущая сущность (НЕ существующая таблица):
+
+```mermaid
+erDiagram
+    ACCOUNT {
+        int Id PK "предлагаемый тип ключа"
+        varchar Login UK
+        varchar PasswordHash
+        varchar DisplayName
+        varchar Role
+    }
+    ACCOUNT ||--o{ NOTICE : "будущий автор"
+    ACCOUNT ||--o{ NOTICE_STATUS_HISTORY : "будущий изменивший"
+    ACCOUNT ||--o{ AUDIT_EVENT : "будущий инициатор"
+```
+
+Кардинальности в целевой модели: Account 1:0..N для Notice (автор), NoticeStatusHistory (изменивший), AuditEvent (инициатор). Уникальность логина; пароль — только в виде безопасного хеша; роль должна быть одной из четырёх разрешённых. **Сейчас эти связи представлены только строками `AuthorUserId`, `ChangedByUserId`, `UserId` без внешних ключей.** Дальнейшее проектирование потребует отдельной миграции и согласования модели пользователей.
+
+## Неопределённые элементы ТЗ
+
+Список статусов и разрешённые переходы, перечень каналов уведомлений, типы обращений, правила доступа к аудиту и механизм создания пользователей требуют уточнения. Значения `Created` / `Delivered` / `Submitted` в исходных C#-моделях не означают согласованный полный справочник.
+
+_Источник: существующие `docs/business_requirements.md`, `docs/system_requirements.md`, `docs/UseCases_AND_Functions.md` и реальные C#-модели входного архива. Отдельный исходный файл ТЗ в предоставленном ZIP отсутствует._
