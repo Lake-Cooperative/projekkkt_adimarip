@@ -1,0 +1,21 @@
+# Secrets / local environment
+.env
+.env.*
+!.env.example
+# Node
+**/node_modules/
+**/dist/
+*.tsbuildinfo
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+*.user
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+# Runtime
+*.log
+coverage/

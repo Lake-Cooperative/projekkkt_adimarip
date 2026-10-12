@@ -1,0 +1,14 @@
+.git
+**/.git
+**/node_modules
+**/dist
+**/bin
+**/obj
+**/.env
+.env
+adimarip_work
+.gitignore
+LICENSE
+docs
+frontend
+*.zip
