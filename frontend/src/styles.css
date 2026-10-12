@@ -12,3 +12,13 @@ a { color: inherit; }
 .hero h1 span { color: #187984; }
 .hero-copy p { max-width: 580px; line-height: 1.8; color: #526678; }
 footer { padding: 28px 7%; color: #718091; border-top: 1px solid #e5edf1; }
+
+.hero { display: grid; grid-template-columns: 1.2fr .8fr; gap: 8%; align-items: center; background: linear-gradient(128deg,#fff 40%,#edf5f6 100%); }
+.hero-panel { border-radius: 22px; min-height: 300px; padding: 35px; background: #102b40; color: #fff; }
+.panel-label { color: #89aebf; font-size: 12px; letter-spacing: .15em; }
+.panel-big { display: block; margin: 28px 0; font-size: 72px; font-weight: 800; }
+.panel-big span { font-size: 13px; font-weight: 400; }
+.panel-rule { border-bottom: 1px solid #3b5363; }
+.panel-row { display: flex; justify-content: space-between; padding: 13px 0; font-size: 12px; }
+.panel-row strong { text-align: right; }
+@media (max-width: 850px) { .hero { grid-template-columns: 1fr; } }
