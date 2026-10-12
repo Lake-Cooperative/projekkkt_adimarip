@@ -1,6 +1,6 @@
 # EF Core domain models — АДИМАРИП
 
-Пакет содержит 10 сущностей, конфигурацию `AdimaripDbContext` и первоначальную миграцию PostgreSQL.
+Пакет содержит 10 сущностей в соответствующих им файлах `sealed class`, конфигурацию `AdimaripDbContext` и первоначальную миграцию `PostgreSQL`.
 
 ## Сущности
 `Recipient`, `Address`, `Office`, `Notice`, `NoticeStatusHistory`, `AuditEvent`, `Notification`, `DeliveryAttempt`, `Appeal`, `Document`.
