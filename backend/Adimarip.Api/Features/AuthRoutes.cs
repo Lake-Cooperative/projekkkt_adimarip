@@ -1,0 +1,50 @@
+using Adimarip.Data;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+
+namespace Adimarip.Api.Features;
+
+public sealed record LoginRequest(string? Username, string? Password);
+public sealed record CreateAccountRequest(string? Username, string? DisplayName, string? Role, int? RecipientId, string? Password);
+
+public static class AuthRoutes
+{
+    private static readonly HashSet<string> Roles = new(StringComparer.Ordinal) { "Operator", "Manager", "Observer", "AutomationEngineer" };
+
+    public static IEndpointRouteBuilder MapRegistryAuth(this IEndpointRouteBuilder app)
+    {
+        app.MapPost("/api/auth/login", async (LoginRequest request, UserStore store, IConfiguration config, CancellationToken ct) =>
+        {
+            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrEmpty(request.Password))
+                return Results.BadRequest(new { error = "Укажите логин и пароль" });
+            var user = await store.FindAsync(request.Username.Trim(), ct);
+            if (user is null || !UserStore.Verify(user, request.Password)) return Results.Unauthorized();
+            return Results.Ok(SecuritySetup.CreateToken(user, config));
+        }).AllowAnonymous();
+
+        app.MapPost("/api/admin/users", async (CreateAccountRequest request, UserStore store, AdimaripDbContext db, CancellationToken ct) =>
+        {
+            var username = request.Username?.Trim() ?? "";
+            var displayName = request.DisplayName?.Trim() ?? "";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(username, "^[a-zA-Z0-9_.-]{3,40}$") ||
+                displayName.Length is < 2 or > 200 || !Roles.Contains(request.Role ?? "") ||
+                request.Password is null || request.Password.Length < 10)
+                return Results.BadRequest(new { error = "Проверьте логин, ФИО, роль и пароль (не менее 10 символов)" });
+            if (request.Role == "Observer" && request.RecipientId is null)
+                return Results.BadRequest(new { error = "Служащий должен быть привязан к адресату" });
+            if (request.RecipientId is int id && !await db.Recipients.AnyAsync(r => r.Id == id, ct))
+                return Results.BadRequest(new { error = "Неизвестный адресат" });
+            try
+            {
+                bool created = await store.CreateAsync(username, displayName, request.Role!, request.RecipientId, request.Password, ct);
+                return created ? Results.Created($"/api/admin/users/{Uri.EscapeDataString(username)}", new { username, role = request.Role }) :
+                    Results.Conflict(new { error = "Такой логин уже существует" });
+            }
+            catch (PostgresException ex) when (ex.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+            {
+                return Results.BadRequest(new { error = "Неизвестный адресат" });
+            }
+        }).RequireAuthorization(SecuritySetup.Engineer);
+        return app;
+    }
+}

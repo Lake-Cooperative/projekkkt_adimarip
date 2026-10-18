@@ -1,10 +1,12 @@
 using Adimarip.Data;
+using Adimarip.Api.Features;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddRegistrySecurity(builder.Configuration);
 
 // The seminar-2 health endpoint does not query PostgreSQL.
 // Domain DbContext is registered when a connection string is provided;
@@ -23,6 +25,8 @@ builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>
 var app = builder.Build();
 
 app.UseCors("Frontend");
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -33,4 +37,8 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", service = "adimarip-api" }))
     .WithName("Health");
 
+if (!string.IsNullOrWhiteSpace(databaseConnection))
+    await DataSchema.ApplyAsync(app.Services);
+
+app.MapRegistryAuth();
 app.Run();
