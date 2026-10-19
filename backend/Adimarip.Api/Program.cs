@@ -60,6 +60,13 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", service = "adimarip-api" }))
     .WithName("Health");
 
+// Unlike liveness, readiness checks PostgreSQL connectivity for deploys and CI.
+app.MapGet("/api/ready", async (AdimaripDbContext db, CancellationToken ct) =>
+    await db.Database.CanConnectAsync(ct)
+        ? Results.Ok(new { status = "ready", database = "connected" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable))
+    .WithName("Readiness");
+
 await DataSchema.ApplyAsync(app.Services);
 await BootstrapAdmin.ApplyAsync(app.Services, app.Configuration);
 await DemoSeed.ApplyAsync(app.Services, app.Configuration);
