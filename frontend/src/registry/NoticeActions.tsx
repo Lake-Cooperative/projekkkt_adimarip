@@ -20,12 +20,14 @@ export function NoticeActions({ session, notice, onChanged }: { session: Session
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
-  async function send(path: string, payload: unknown, method: 'POST' | 'PATCH' = 'POST') {
+  async function send(path: string, payload: unknown, method: 'POST' | 'PATCH' = 'POST'): Promise<boolean> {
+    if (busy) return false;
     setBusy(true); setError(''); setSuccess('');
     try {
       await api(path, session, { ...asJson(payload), method });
       await onChanged(); setSuccess('Действие выполнено');
-    } catch (e) { setError(e instanceof Error ? e.message : 'Не удалось выполнить действие'); }
+      return true;
+    } catch (e) { setError(e instanceof Error ? e.message : 'Не удалось выполнить действие'); return false; }
     finally { setBusy(false); }
   }
   const submit = (handler: () => Promise<void>) => (e: FormEvent) => { e.preventDefault(); void handler(); };
@@ -44,7 +46,7 @@ export function NoticeActions({ session, notice, onChanged }: { session: Session
           <label>Тестовый адрес<input required value={address} onChange={e => setAddress(e.target.value)} /></label>
           <div className="form-actions"><button disabled={busy} className="button primary">Симулировать доставку</button></div>
         </form>
-        <form className="form-grid" onSubmit={submit(async () => { await send(`/api/notices/${notice.id}/appeals`, { type: appealType, text: appealText }); setAppealText(''); })}>
+        <form className="form-grid" onSubmit={submit(async () => { if (await send(`/api/notices/${notice.id}/appeals`, { type: appealType, text: appealText })) setAppealText(''); })}>
           <h3 className="wide">Зарегистрировать обращение</h3>
           <label>Тип обращения<input required value={appealType} onChange={e => setAppealType(e.target.value)} /></label>
           <label className="wide">Текст<textarea required value={appealText} maxLength={4000} onChange={e => setAppealText(e.target.value)} /></label>
