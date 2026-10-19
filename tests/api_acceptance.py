@@ -82,23 +82,24 @@ def main():
     own_notice_a = observer_list['items'][0]['id']
     assert request(f'/api/notices/{own_notice_a}', token=observer)['recipientId'] == owner_a
 
-    second_recipient = request('/api/recipients', 'POST', {
-        'externalIdentifier': f'REGRESSION-{stamp}', 'fullName': 'Получатель Б (тест)',
+    # Recipients are created only by the engineer, together with the Observer account.
+    request('/api/recipients', 'POST', {
+        'externalIdentifier': f'DENIED-{stamp}', 'fullName': 'Не должен создаться',
+        'dateOfBirth': '2001-01-01'
+    }, operator, 403)
+    username_b = f'obs_{stamp}'
+    created_b = request('/api/admin/users', 'POST', {
+        'username': username_b, 'displayName': 'Получатель Б (тест)', 'role': 'Observer',
         'dateOfBirth': '2001-01-01', 'email': 'test-observer-b@example.invalid',
-        'phone': None, 'address': {'city': 'Учебный город'}
-    }, operator, 201)
-    owner_b = second_recipient['id']
+        'city': 'Учебный город', 'password': PASSWORD
+    }, engineer, 201)
+    owner_b = created_b['recipientId']
     assert owner_a != owner_b
     second_notice = request('/api/notices', 'POST', {
         'number': f'OBS-{stamp}', 'recipientId': owner_b, 'officeId': offices[0]['id'],
         'createdAt': '2026-01-01', 'processingDeadline': '2026-01-02',
         'reason': 'Оповещение для второго получателя'
     }, operator, 201)['id']
-    username_b = f'obs_{stamp}'
-    request('/api/admin/users', 'POST', {
-        'username': username_b, 'displayName': 'Получатель Б (тест)',
-        'role': 'Observer', 'recipientId': owner_b, 'password': PASSWORD
-    }, engineer, 201)
     observer_b = login(username_b)
     b_profile = request('/api/recipients', token=observer_b)
     assert len(b_profile) == 1 and b_profile[0]['id'] == owner_b, 'Observer B sees other recipients'
