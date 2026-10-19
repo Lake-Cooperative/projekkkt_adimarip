@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           for i in {1..60}; do
-            if curl -fsS http://localhost:8081/api/health; then exit 0; fi
+            if curl -fsS http://localhost:8081/api/ready; then exit 0; fi
             sleep 3
           done
           docker compose -f docker_compose.yml logs backend
