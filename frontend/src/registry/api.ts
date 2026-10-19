@@ -60,6 +60,10 @@ export async function api<T>(path: string, session: Session | null, init: Reques
     throw new ApiError(response.status, result?.error ?? result?.detail ?? result?.title ?? fallback);
   }
   if (response.status === 204) return undefined as T;
-  return await response.json() as T;
+  try {
+    return await response.json() as T;
+  } catch {
+    throw new ApiError(response.status, 'Сервер вернул некорректный JSON. Проверьте API и прокси.');
+  }
 }
 export const asJson = (value: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(value) });
