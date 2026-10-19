@@ -32,3 +32,11 @@ WHERE r."Id" IS NULL;
 -- Active accounts have known roles and Observer accounts are tied to recipients.
 SELECT "Username", "Role", "RecipientId", length("PasswordHash") > 20 AS has_password_hash
 FROM "AppUsers" ORDER BY "Role", "Username";
+
+-- Versioned migrations visible in order, including AppUsers table.
+SELECT "MigrationId" FROM "__EFMigrationsHistory" ORDER BY "MigrationId";
+
+-- A duplicate notice number or recipient identifier must not be present.
+SELECT "Number", count(*) AS duplicates FROM "Notices" GROUP BY "Number" HAVING count(*) > 1;
+SELECT "ExternalIdentifier", count(*) AS duplicates FROM "Recipients"
+GROUP BY "ExternalIdentifier" HAVING count(*) > 1;
