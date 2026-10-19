@@ -20,7 +20,7 @@ public static class AuthRoutes
             var user = await store.FindAsync(request.Username.Trim(), ct);
             if (user is null || !UserStore.Verify(user, request.Password)) return Results.Unauthorized();
             return Results.Ok(SecuritySetup.CreateToken(user, config));
-        }).AllowAnonymous();
+        }).AllowAnonymous().RequireRateLimiting("login");
 
         app.MapPost("/api/admin/users", async (CreateAccountRequest request, UserStore store, AdimaripDbContext db, CancellationToken ct) =>
         {
