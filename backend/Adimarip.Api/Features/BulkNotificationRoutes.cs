@@ -11,8 +11,10 @@ public static class BulkNotificationRoutes
     public static IEndpointRouteBuilder MapBulkNotifications(this IEndpointRouteBuilder app)
     {
         app.MapPost("/api/notices/notifications/bulk", async (BulkNotifyInput input,
-            AdimaripDbContext db, HttpContext context, CancellationToken ct) =>
+            AdimaripDbContext db, IConfiguration config, HttpContext context, CancellationToken ct) =>
         {
+            if (!config.GetValue<bool>("Demo:Enabled"))
+                return Results.Problem("Real bulk delivery is not configured.", statusCode: 501);
             var ids = input.NoticeIds?.Distinct().ToArray() ?? [];
             if (ids.Length is < 1 or > 50 || ids.Any(id => id < 1) ||
                 input.Channel is not ("Email" or "Sms" or "Portal" or "Max") ||
