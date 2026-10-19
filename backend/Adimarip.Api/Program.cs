@@ -49,4 +49,5 @@ app.MapRegistryNotices();
 app.MapRegistryStatuses();
 app.MapRegistryActions();
 app.MapBulkNotifications();
+app.MapRegistryArchives();
 app.Run();

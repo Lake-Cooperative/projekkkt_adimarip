@@ -19,7 +19,9 @@ public static class DirectoryRoutes
 
         app.MapGet("/api/recipients", async (string? search, AdimaripDbContext db, HttpContext context, CancellationToken ct) =>
         {
-            var query = db.Recipients.AsNoTracking().AsQueryable();
+            var archivedIds = await db.Database.SqlQueryRaw<int>(
+                "SELECT \"RecipientId\" AS \"Value\" FROM \"RecipientArchives\"").ToArrayAsync(ct);
+            var query = db.Recipients.AsNoTracking().Where(r => !archivedIds.Contains(r.Id));
             if (context.User.IsInRole("Observer"))
             {
                 var id = context.User.CurrentRecipientId();

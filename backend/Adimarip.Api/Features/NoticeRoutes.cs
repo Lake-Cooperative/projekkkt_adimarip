@@ -89,6 +89,9 @@ public static class NoticeRoutes
             if (!await db.Recipients.AnyAsync(r => r.Id == input.RecipientId, ct) ||
                 !await db.Offices.AnyAsync(o => o.Id == input.OfficeId, ct))
                 return Results.NotFound(new { error = "Адресат или подразделение не найдены" });
+            var archived = await db.Database.SqlQueryRaw<int>(
+                "SELECT \"RecipientId\" AS \"Value\" FROM \"RecipientArchives\"").AnyAsync(x => x == input.RecipientId, ct);
+            if (archived) return Results.Conflict(new { error = "Нельзя выписать оповещение списанному адресату" });
             if (await db.Notices.AnyAsync(n => n.Number == number, ct))
                 return Results.Conflict(new { error = "Номер оповещения занят" });
             var notice = new Notice
