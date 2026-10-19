@@ -30,7 +30,7 @@ export function NoticeActions({ session, notice, onChanged }: { session: Session
     } catch (e) { setError(e instanceof Error ? e.message : 'Не удалось выполнить действие'); return false; }
     finally { setBusy(false); }
   }
-  const submit = (handler: () => Promise<void>) => (e: FormEvent) => { e.preventDefault(); void handler(); };
+  const submit = (handler: () => Promise<unknown>) => (e: FormEvent) => { e.preventDefault(); void handler(); };
   return <section className="panel"><h2>Действия с оповещением</h2>{error && <p role="alert" className="alert error">{error}</p>}{success && <p className="alert success">{success}</p>}
     <div className="split">
       {writer && <>
