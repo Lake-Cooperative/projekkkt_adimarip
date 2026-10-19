@@ -16,7 +16,8 @@ public static class NoticeRoutes
         {
             var currentPage = page ?? 1;
             var size = pageSize ?? 15;
-            if (currentPage < 1 || size is < 1 or > 100 || (search?.Length ?? 0) > 100)
+            if (currentPage < 1 || size is < 1 or > 100 || currentPage > int.MaxValue / size ||
+                (search?.Length ?? 0) > 100 || (status?.Length ?? 0) > 50 || officeId < 1)
                 return Results.BadRequest(new { error = "Некорректные параметры поиска или пагинации" });
             IQueryable<Notice> query = db.Notices.AsNoTracking();
             if (context.User.IsInRole("Observer"))
