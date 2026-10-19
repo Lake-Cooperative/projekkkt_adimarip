@@ -17,6 +17,17 @@ export function RegistryApp() {
   const [health, setHealth] = useState<'loading' | 'ok' | 'error'>('loading');
 
   useEffect(() => {
+    const expire = () => {
+      setSession(null);
+      setSelectedId(null);
+      setNoticeView('list');
+      setSection('notices');
+    };
+    window.addEventListener('adimarip:session-expired', expire);
+    return () => window.removeEventListener('adimarip:session-expired', expire);
+  }, []);
+
+  useEffect(() => {
     fetch(`${apiBase}/api/health`)
       .then(response => setHealth(response.ok ? 'ok' : 'error'))
       .catch(() => setHealth('error'));

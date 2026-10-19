@@ -50,6 +50,11 @@ export async function api<T>(path: string, session: Session | null, init: Reques
     }
   });
   if (!response.ok) {
+    // A rejected authenticated request should expire the local session consistently.
+    if (response.status === 401 && session !== null) {
+      saveSession(null);
+      window.dispatchEvent(new Event('adimarip:session-expired'));
+    }
     const result = await response.json().catch(() => null) as { error?: string; detail?: string; title?: string } | null;
     const fallback = response.status === 401 ? 'Войдите в систему повторно' : response.status === 403 ? 'Недостаточно прав' : `Ошибка HTTP ${response.status}`;
     throw new ApiError(response.status, result?.error ?? result?.detail ?? result?.title ?? fallback);
