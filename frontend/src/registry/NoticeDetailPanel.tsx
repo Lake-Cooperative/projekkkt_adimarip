@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type NoticeDetail, type Session } from './api';
+import { NoticeActions } from './NoticeActions';
 
 const dateTime = (value: string) => new Date(value).toLocaleString('ru-RU');
 
@@ -29,6 +30,7 @@ export function NoticeDetailPanel({ session, id, onBack }: { session: Session; i
       {session.role === 'Manager' && <section className="panel"><h2>Журнал аудита</h2>{notice.audit?.length ? <ol className="timeline">{notice.audit.map(a => <li key={a.id}><strong>{a.action}</strong> · {dateTime(a.occurredAt)} · {a.userId}<div>{a.details || ''}</div></li>)}</ol> : <p>Записей аудита нет</p>}</section>}
       <div className="split"><section className="panel"><h2>Уведомления</h2>{notice.notifications.map(n => <p key={n.id}><strong>{n.channel}</strong> → {n.recipientAddress}<br /><small>Демо, {dateTime(n.createdAt)}; {n.attempts[0]?.status ?? '—'}</small></p>)}{!notice.notifications.length && <p>Нет уведомлений</p>}</section>
         <section className="panel"><h2>Обращения</h2>{notice.appeals.map(a => <p key={a.id}><strong>{a.type}</strong> · {a.status}<br />{a.text}</p>)}{!notice.appeals.length && <p>Нет обращений</p>}</section></div>
+      <NoticeActions session={session} notice={notice} onChanged={load} />
       <section className="panel"><h2>Документы (метаданные)</h2>{notice.documents.map(d => <p key={d.id}><strong>{d.name}</strong> · {d.mimeType} · <a href={d.storageUri} target="_blank" rel="noopener noreferrer">Открыть ссылку ↗</a></p>)}{!notice.documents.length && <p>Документы отсутствуют</p>}</section>
     </>}
   </>;
