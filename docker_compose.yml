@@ -29,6 +29,9 @@ services:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8081
       ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB:-adimarip};Username=${POSTGRES_USER:-adimarip};Password=${POSTGRES_PASSWORD:-adimarip_dev_password}
+      Jwt__Key: ${JWT_SECRET:-LOCAL_DEMO_CHANGE_THIS_JWT_SIGNING_KEY_32CHARS_MIN}
+      Demo__Enabled: ${DEMO_ENABLED:-true}
+      Demo__Password: ${DEMO_PASSWORD:-demo-password-change-me}
       Cors__AllowedOrigins__0: http://localhost:8080
       Cors__AllowedOrigins__1: http://localhost:5173
     ports:
