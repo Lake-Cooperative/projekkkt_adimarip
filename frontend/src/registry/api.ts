@@ -7,7 +7,10 @@ export type Session = {
   username: string;
   displayName: string;
   role: Role;
+  surname?: string;
+  recipientId?: number | null;
 };
+export type RecipientOption = { id: number; externalIdentifier: string; fullName: string };
 export type Recipient = { id: number; externalIdentifier: string; fullName: string; dateOfBirth: string; email: string | null; phone: string | null };
 export type Office = { id: number; name: string };
 export type Notice = { id: number; number: string; recipientId: number; recipientName: string; officeId: number; officeName: string; createdAt: string; processingDeadline: string; reason: string; comment: string | null; currentStatus: string };

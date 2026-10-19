@@ -13,14 +13,28 @@ public static class AuthRoutes
 
     public static IEndpointRouteBuilder MapRegistryAuth(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/api/auth/login", async (LoginRequest request, UserStore store, IConfiguration config, CancellationToken ct) =>
+        app.MapPost("/api/auth/login", async (LoginRequest request, UserStore store, AdimaripDbContext db, IConfiguration config, CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrEmpty(request.Password))
                 return Results.BadRequest(new { error = "Укажите логин и пароль" });
             var user = await store.FindAsync(request.Username.Trim(), ct);
             if (user is null || !UserStore.Verify(user, request.Password)) return Results.Unauthorized();
-            return Results.Ok(SecuritySetup.CreateToken(user, config));
+            string? recipientName = user.RecipientId is int rid
+                ? await db.Recipients.AsNoTracking().Where(r => r.Id == rid).Select(r => r.FullName).FirstOrDefaultAsync(ct)
+                : null;
+            return Results.Ok(SecuritySetup.CreateToken(user, config, recipientName));
         }).AllowAnonymous().RequireRateLimiting("login");
+
+        // Recipients list for the engineer: pick the recipient an Observer account will be bound to.
+        app.MapGet("/api/admin/recipients", async (AdimaripDbContext db, CancellationToken ct) =>
+        {
+            var archivedIds = await db.Database.SqlQueryRaw<int>(
+                "SELECT \"RecipientId\" AS \"Value\" FROM \"RecipientArchives\"").ToArrayAsync(ct);
+            var list = await db.Recipients.AsNoTracking().Where(r => !archivedIds.Contains(r.Id))
+                .OrderBy(r => r.FullName).Take(500)
+                .Select(r => new { r.Id, r.ExternalIdentifier, r.FullName }).ToListAsync(ct);
+            return Results.Ok(list);
+        }).RequireAuthorization(SecuritySetup.Engineer);
 
         app.MapPost("/api/admin/users", async (CreateAccountRequest request, UserStore store, AdimaripDbContext db, CancellationToken ct) =>
         {
