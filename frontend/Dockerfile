@@ -4,7 +4,7 @@ COPY package.json ./
 # Exact dependency versions are pinned in package.json; first install needs npm registry access.
 RUN npm install --no-audit --no-fund
 COPY . ./
-ARG VITE_API_URL=http://localhost:8081
+ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 

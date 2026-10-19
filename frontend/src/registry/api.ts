@@ -1,4 +1,4 @@
-export const apiBase = (import.meta.env.VITE_API_URL ?? 'http://localhost:8081').replace(/\/$/, '');
+export const apiBase = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 
 export type Role = 'Manager' | 'Operator' | 'Observer' | 'AutomationEngineer';
 export type Session = {

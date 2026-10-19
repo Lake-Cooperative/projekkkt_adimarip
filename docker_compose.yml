@@ -41,7 +41,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8081}
+        VITE_API_URL: ${VITE_API_URL:-}
     restart: unless-stopped
     depends_on:
       - backend
