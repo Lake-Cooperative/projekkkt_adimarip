@@ -12,7 +12,8 @@ public static class NoticeRoutes
     public static IEndpointRouteBuilder MapRegistryNotices(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/notices", async (string? status, int? officeId, string? search,
-            int? page, int? pageSize, AdimaripDbContext db, HttpContext context, CancellationToken ct) =>
+            int? page, int? pageSize, AdimaripDbContext db, UserStore accounts,
+            HttpContext context, CancellationToken ct) =>
         {
             var currentPage = page ?? 1;
             var size = pageSize ?? 15;
@@ -22,8 +23,9 @@ public static class NoticeRoutes
             IQueryable<Notice> query = db.Notices.AsNoTracking();
             if (context.User.IsInRole("Observer"))
             {
-                var own = context.User.CurrentRecipientId();
-                query = query.Where(n => own.HasValue && n.RecipientId == own.Value);
+                var ownerId = await ObserverAccess.GetVerifiedRecipientIdAsync(context.User, accounts, ct);
+                if (!ownerId.HasValue) return Results.Forbid();
+                query = query.Where(n => n.RecipientId == ownerId.Value);
             }
             if (!string.IsNullOrWhiteSpace(status)) query = query.Where(n => n.CurrentStatus == status);
             if (officeId.HasValue) query = query.Where(n => n.OfficeId == officeId.Value);
@@ -45,15 +47,24 @@ public static class NoticeRoutes
             return Results.Ok(new { items, total, page = currentPage, pageSize = size, totalPages = (total + size - 1) / size });
         }).RequireAuthorization(SecuritySetup.Reader);
 
-        app.MapGet("/api/notices/{id:int}", async (int id, AdimaripDbContext db, HttpContext context, CancellationToken ct) =>
+        app.MapGet("/api/notices/{id:int}", async (int id, AdimaripDbContext db,
+            UserStore accounts, HttpContext context, CancellationToken ct) =>
         {
-            var n = await db.Notices.AsNoTracking().AsSplitQuery()
+            IQueryable<Notice> query = db.Notices.AsNoTracking();
+            if (context.User.IsInRole("Observer"))
+            {
+                var ownerId = await ObserverAccess.GetVerifiedRecipientIdAsync(context.User, accounts, ct);
+                if (!ownerId.HasValue) return Results.Forbid();
+                // Restrict in SQL before loading history/documents, including direct ID requests.
+                query = query.Where(n => n.RecipientId == ownerId.Value);
+            }
+            var n = await query.AsSplitQuery()
                 .Include(x => x.Recipient).Include(x => x.Office)
                 .Include(x => x.StatusHistory).Include(x => x.AuditEvents)
                 .Include(x => x.Notifications).ThenInclude(x => x.DeliveryAttempts)
                 .Include(x => x.Appeals).Include(x => x.Documents)
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
-            if (n is null || (context.User.IsInRole("Observer") && n.RecipientId != context.User.CurrentRecipientId()))
+            if (n is null)
                 return Results.NotFound(new { error = "Оповещение не найдено" });
             return Results.Ok(new
             {

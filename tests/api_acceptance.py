@@ -71,10 +71,52 @@ def main():
     request('/api/notices/notifications/bulk', 'POST', {'noticeIds': [nid], 'channel': 'Portal', 'recipientAddress': 'demo'}, manager)
     updated = request(f'/api/notices/{nid}', token=manager)
     assert len(updated['history']) >= 3 and len(updated['notifications']) == 2 and updated['documents']
+    # Regression: the recipient role is not a global directory/notice reader.
+    # Two different Observer accounts must be strictly isolated from one another.
+    own_profile = request('/api/recipients', token=observer)
+    assert len(own_profile) == 1, 'Observer must see exactly its own recipient record'
+    owner_a = own_profile[0]['id']
     observer_list = request('/api/notices', token=observer)
-    if not any(row['id'] == nid for row in observer_list['items']):
-        request(f'/api/notices/{nid}', token=observer, status=404)
-    print(f'OK: {checks} HTTP checks passed. Test notice ID: {nid}')
+    assert all(row['recipientId'] == owner_a for row in observer_list['items']), 'Observer A sees foreign notices'
+    assert observer_list['total'] > 0, 'Demo Observer A has no notices'
+    own_notice_a = observer_list['items'][0]['id']
+    assert request(f'/api/notices/{own_notice_a}', token=observer)['recipientId'] == owner_a
+
+    second_recipient = request('/api/recipients', 'POST', {
+        'externalIdentifier': f'REGRESSION-{stamp}', 'fullName': 'Получатель Б (тест)',
+        'dateOfBirth': '2001-01-01', 'email': 'test-observer-b@example.invalid',
+        'phone': None, 'address': {'city': 'Учебный город'}
+    }, operator, 201)
+    owner_b = second_recipient['id']
+    assert owner_a != owner_b
+    second_notice = request('/api/notices', 'POST', {
+        'number': f'OBS-{stamp}', 'recipientId': owner_b, 'officeId': offices[0]['id'],
+        'createdAt': '2026-01-01', 'processingDeadline': '2026-01-02',
+        'reason': 'Оповещение для второго получателя'
+    }, operator, 201)['id']
+    username_b = f'obs_{stamp}'
+    request('/api/admin/users', 'POST', {
+        'username': username_b, 'displayName': 'Получатель Б (тест)',
+        'role': 'Observer', 'recipientId': owner_b, 'password': PASSWORD
+    }, engineer, 201)
+    observer_b = login(username_b)
+    b_profile = request('/api/recipients', token=observer_b)
+    assert len(b_profile) == 1 and b_profile[0]['id'] == owner_b, 'Observer B sees other recipients'
+    b_notices = request('/api/notices', token=observer_b)
+    assert b_notices['total'] == 1 and len(b_notices['items']) == 1
+    assert b_notices['items'][0]['recipientId'] == owner_b and b_notices['items'][0]['id'] == second_notice
+    assert request(f'/api/notices/{second_notice}', token=observer_b)['recipientId'] == owner_b
+
+    # Access by guessed ID must fail even if the record exists.
+    request(f'/api/notices/{second_notice}', token=observer, status=404)
+    request(f'/api/notices/{own_notice_a}', token=observer_b, status=404)
+    assert request('/api/recipients?search=REGRESSION-', token=observer) == []
+    assert all(r['id'] == owner_a for r in request('/api/recipients?search=', token=observer))
+    assert all(r['recipientId'] == owner_a for r in request('/api/notices?search=', token=observer)['items'])
+    # An Observer cannot mutate another person's data either.
+    request('/api/notices', 'POST', {'number': f'BAD-{stamp}'}, observer_b, 403)
+    request(f'/api/notices/{second_notice}/status', 'PATCH', {'status': 'Sent'}, observer, 403)
+    print(f'OK: {checks} HTTP checks passed. Test notice ID: {nid}; observer isolation verified.')
 
 if __name__ == '__main__':
     try:

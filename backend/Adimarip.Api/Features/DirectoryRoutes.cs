@@ -12,20 +12,31 @@ public static class DirectoryRoutes
 {
     public static IEndpointRouteBuilder MapRegistryDirectories(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/offices", async (AdimaripDbContext db, CancellationToken ct) =>
-            Results.Ok(await db.Offices.AsNoTracking().OrderBy(o => o.Name)
-                .Select(o => new { o.Id, o.Name }).ToListAsync(ct)))
-            .RequireAuthorization(SecuritySetup.Reader);
+        app.MapGet("/api/offices", async (AdimaripDbContext db, UserStore accounts,
+            HttpContext context, CancellationToken ct) =>
+        {
+            var query = db.Offices.AsNoTracking();
+            if (context.User.IsInRole("Observer"))
+            {
+                var ownerId = await ObserverAccess.GetVerifiedRecipientIdAsync(context.User, accounts, ct);
+                if (!ownerId.HasValue) return Results.Forbid();
+                query = query.Where(o => db.Notices.Any(n => n.OfficeId == o.Id && n.RecipientId == ownerId.Value));
+            }
+            return Results.Ok(await query.OrderBy(o => o.Name)
+                .Select(o => new { o.Id, o.Name }).ToListAsync(ct));
+        }).RequireAuthorization(SecuritySetup.Reader);
 
-        app.MapGet("/api/recipients", async (string? search, AdimaripDbContext db, HttpContext context, CancellationToken ct) =>
+        app.MapGet("/api/recipients", async (string? search, AdimaripDbContext db,
+            UserStore accounts, HttpContext context, CancellationToken ct) =>
         {
             var archivedIds = await db.Database.SqlQueryRaw<int>(
                 "SELECT \"RecipientId\" AS \"Value\" FROM \"RecipientArchives\"").ToArrayAsync(ct);
             var query = db.Recipients.AsNoTracking().Where(r => !archivedIds.Contains(r.Id));
             if (context.User.IsInRole("Observer"))
             {
-                var id = context.User.CurrentRecipientId();
-                query = query.Where(r => id.HasValue && r.Id == id.Value);
+                var ownerId = await ObserverAccess.GetVerifiedRecipientIdAsync(context.User, accounts, ct);
+                if (!ownerId.HasValue) return Results.Forbid();
+                query = query.Where(r => r.Id == ownerId.Value);
             }
             if (!string.IsNullOrWhiteSpace(search))
             {

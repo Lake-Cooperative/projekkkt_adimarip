@@ -47,15 +47,17 @@ export function RegistryApp() {
       <aside className="registry-sidebar">
         <p className="side-caption">РАБОЧЕЕ МЕСТО</p>
         {session.role !== 'AutomationEngineer' && <>
-          <button className={section === 'notices' ? 'nav active' : 'nav'} onClick={() => { setSection('notices'); setNoticeView('list'); }}>▤ Реестр оповещений</button>
-          <button className={section === 'recipients' ? 'nav active' : 'nav'} onClick={() => setSection('recipients')}>♙ Адресаты</button>
+          <button className={section === 'notices' ? 'nav active' : 'nav'} onClick={() => { setSection('notices'); setNoticeView('list'); }}>
+            {session.role === 'Observer' ? '▤ Мои оповещения' : '▤ Реестр оповещений'}
+          </button>
+          {session.role !== 'Observer' && <button className={section === 'recipients' ? 'nav active' : 'nav'} onClick={() => setSection('recipients')}>♙ Адресаты</button>}
         </>}
         {session.role === 'AutomationEngineer' && <button className="nav active" onClick={() => setSection('admin')}>⚙ Учётные записи</button>}
         <p className="side-help">Учебная версия. Демонстрационные каналы не подтверждают реальную доставку. Для промышленного использования требуется внешний сервис.</p>
       </aside>
       <main className="registry-main">
-        <div className="page-heading"><p className="eyebrow">КООПЕРАТИВ «ОЗЕРО» / РЕЕСТР</p><h1>{section === 'notices' ? 'Оповещения' : section === 'recipients' ? 'Адресаты' : 'Управление доступом'}</h1></div>
-        {section === 'recipients' && <RecipientsPanel session={session} />}
+        <div className="page-heading"><p className="eyebrow">КООПЕРАТИВ «ОЗЕРО» / РЕЕСТР</p><h1>{section === 'notices' ? (session.role === 'Observer' ? 'Мои оповещения' : 'Оповещения') : section === 'recipients' ? 'Адресаты' : 'Управление доступом'}</h1></div>
+        {section === 'recipients' && session.role !== 'Observer' && <RecipientsPanel session={session} />}
         {section === 'admin' && <AdminPanel session={session} />}
         {section === 'notices' && noticeView === 'list' && <NoticesPanel session={session} onSelect={id => { setSelectedId(id); setNoticeView('detail'); }} onCreate={() => setNoticeView('create')} />}
         {section === 'notices' && noticeView === 'create' && <CreateNoticePanel session={session} onBack={() => setNoticeView('list')} onSaved={id => { setSelectedId(id); setNoticeView('detail'); }} />}

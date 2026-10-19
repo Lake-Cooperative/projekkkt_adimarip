@@ -52,7 +52,8 @@ export function NoticesPanel({ session, onSelect, onCreate }: { session: Session
       <select aria-label="Канал массовой отправки" value={bulkChannel} onChange={e => setBulkChannel(e.target.value)}><option value="Email">E-mail</option><option value="Sms">SMS</option><option value="Portal">Портал</option><option value="Max">MAX</option></select>
       <input aria-label="Тестовый адрес" value={bulkAddress} onChange={e => setBulkAddress(e.target.value)} />
       <button className="button primary" onClick={() => void bulkSend()}>Симулировать массовую отправку</button></section>}
-    <section className="panel"><h2>Реестр <span className="muted">· {data.total} записей</span></h2>
+    {session.role === 'Observer' && <p className="muted" role="note">Здесь отображаются только оповещения, адресованные вам. Чужие записи недоступны.</p>}
+    <section className="panel"><h2>{session.role === 'Observer' ? 'Мои оповещения' : 'Реестр'} <span className="muted">· {data.total} записей</span></h2>
       <div className="table-wrap"><table className="registry-table"><thead><tr>{allowWrite && <th>Выбор</th>}<th>Номер</th><th>Адресат</th><th>Подразделение</th><th>Создано</th><th>Срок</th><th>Статус</th></tr></thead><tbody>
         {data.items.map((n, i) => <tr className="clickable" tabIndex={0} key={n.id} onClick={() => onSelect(n.id)} onKeyDown={e => { if (e.key === 'Enter') onSelect(n.id); }}>
           {allowWrite && <td><input type="checkbox" aria-label={`Выбрать ${n.number}`} checked={selectedIds.includes(n.id)} onClick={e => e.stopPropagation()} onChange={() => toggle(n.id)} /></td>}
