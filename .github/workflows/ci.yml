@@ -1,0 +1,58 @@
+name: Build and API smoke tests
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build backend and EF Core model
+        run: dotnet build backend/Adimarip.Api/Adimarip.Api.csproj --configuration Release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Check Python scripts
+        run: python3 -m py_compile tests/api_acceptance.py
+
+  integration:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-db-only-password
+      JWT_SECRET: ci-ephemeral-jwt-secret-with-more-than-32-bytes
+      DEMO_ENABLED: 'true'
+      DEMO_PASSWORD: ci-demo-password-change-me
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start demo stack
+        run: docker compose -f docker_compose.yml up -d --build
+      - name: Wait for API
+        shell: bash
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8081/api/health; then exit 0; fi
+            sleep 3
+          done
+          docker compose -f docker_compose.yml logs backend
+          exit 1
+      - name: Exercise JWT, roles, notices and audit
+        run: python3 tests/api_acceptance.py
+      - name: Verify SQL invariants
+        run: |
+          docker compose -f docker_compose.yml exec -T db sh -c             'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < tests/sql/schema-verification.sql
+      - name: Compose logs if failed
+        if: failure()
+        run: docker compose -f docker_compose.yml logs --no-color
+      - name: Tear down ephemeral containers
+        if: always()
+        run: docker compose -f docker_compose.yml down -v
