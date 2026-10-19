@@ -61,6 +61,7 @@ app.MapGet("/api/health", () => Results.Ok(new { status = "ok", service = "adima
     .WithName("Health");
 
 await DataSchema.ApplyAsync(app.Services);
+await BootstrapAdmin.ApplyAsync(app.Services, app.Configuration);
 await DemoSeed.ApplyAsync(app.Services, app.Configuration);
 
 app.MapRegistryAuth();
