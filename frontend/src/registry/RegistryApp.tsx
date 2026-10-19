@@ -51,7 +51,7 @@ export function RegistryApp() {
           <button className={section === 'recipients' ? 'nav active' : 'nav'} onClick={() => setSection('recipients')}>♙ Адресаты</button>
         </>}
         {session.role === 'AutomationEngineer' && <button className="nav active" onClick={() => setSection('admin')}>⚙ Учётные записи</button>}
-        <p className="side-help">Только демонстрационные данные. Внешняя отправка сообщений не выполняется.</p>
+        <p className="side-help">Учебная версия. Демонстрационные каналы не подтверждают реальную доставку. Для промышленного использования требуется внешний сервис.</p>
       </aside>
       <main className="registry-main">
         <div className="page-heading"><p className="eyebrow">КООПЕРАТИВ «ОЗЕРО» / РЕЕСТР</p><h1>{section === 'notices' ? 'Оповещения' : section === 'recipients' ? 'Адресаты' : 'Управление доступом'}</h1></div>
