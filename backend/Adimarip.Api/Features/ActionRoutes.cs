@@ -15,8 +15,10 @@ public static class ActionRoutes
     public static IEndpointRouteBuilder MapRegistryActions(this IEndpointRouteBuilder app)
     {
         app.MapPost("/api/notices/{id:int}/notifications", async (int id, NotifyInput input,
-            AdimaripDbContext db, HttpContext context, CancellationToken ct) =>
+            AdimaripDbContext db, IConfiguration config, HttpContext context, CancellationToken ct) =>
         {
+            if (!config.GetValue<bool>("Demo:Enabled"))
+                return Results.Problem("Real notification provider is not configured.", statusCode: 501);
             var address = input.RecipientAddress?.Trim() ?? "";
             if (!Channels.Contains(input.Channel ?? "") || address.Length is < 2 or > 320)
                 return Results.BadRequest(new { error = "Недопустимый канал или адрес доставки" });
