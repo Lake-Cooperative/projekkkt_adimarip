@@ -21,21 +21,30 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 
-// The seminar-2 health endpoint does not query PostgreSQL.
-// Domain DbContext is registered when a connection string is provided;
-// migrations and CRUD endpoints will be implemented in later seminars.
+// The registry requires PostgreSQL; failing early gives a clear deployment error.
 var databaseConnection = builder.Configuration.GetConnectionString("Default");
-if (!string.IsNullOrWhiteSpace(databaseConnection))
-{
-    builder.Services.AddDbContext<AdimaripDbContext>(options => options.UseNpgsql(databaseConnection));
-}
+if (string.IsNullOrWhiteSpace(databaseConnection))
+    throw new InvalidOperationException("ConnectionStrings:Default is required.");
+builder.Services.AddDbContext<AdimaripDbContext>(options => options.UseNpgsql(databaseConnection));
 
+// Cross-origin requests are for local development. Production traffic is same-origin.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:8080", "http://localhost:5173" };
+    ?? (builder.Environment.IsDevelopment() ? new[] { "http://localhost:8080", "http://localhost:5173" } : []);
 builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>
     policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
 
 var app = builder.Build();
+
+if (app.Environment.IsProduction())
+{
+    var jwt = app.Configuration["Jwt:Key"] ?? "";
+    if (app.Configuration.GetValue<bool>("Demo:Enabled") ||
+        jwt.Contains("LOCAL_DEMO", StringComparison.OrdinalIgnoreCase) ||
+        jwt.Contains("change-me", StringComparison.OrdinalIgnoreCase) ||
+        jwt.Contains("CHANGE_THIS", StringComparison.OrdinalIgnoreCase) ||
+        databaseConnection.Contains("adimarip_dev_password", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException("Unsafe demo configuration is forbidden in Production.");
+}
 
 app.UseCors("Frontend");
 app.UseRateLimiter();
@@ -51,11 +60,8 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok", service = "adimarip-api" }))
     .WithName("Health");
 
-if (!string.IsNullOrWhiteSpace(databaseConnection))
-{
-    await DataSchema.ApplyAsync(app.Services);
-    await DemoSeed.ApplyAsync(app.Services, app.Configuration);
-}
+await DataSchema.ApplyAsync(app.Services);
+await DemoSeed.ApplyAsync(app.Services, app.Configuration);
 
 app.MapRegistryAuth();
 app.MapRegistryDirectories();
