@@ -7,4 +7,4 @@ namespace Adimarip.Data.Migrations;
 // itself unchanged; EF Core can now find and apply it to a clean PostgreSQL volume.
 [DbContext(typeof(AdimaripDbContext))]
 [Migration("202610100001_InitialDomainSchema")]
-public partial class InitialDomainSchema;
+public partial class InitialDomainSchema { }

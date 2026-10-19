@@ -17,8 +17,9 @@ public static class DataSchema
                 "DisplayName" varchar(200) NOT NULL,
                 "PasswordHash" text NOT NULL,
                 "Role" varchar(40) NOT NULL CHECK ("Role" IN ('Operator','Manager','Observer','AutomationEngineer')),
-                "RecipientId" integer NULL REFERENCES "Recipients"("Id") ON DELETE SET NULL,
-                "CreatedAt" timestamptz NOT NULL DEFAULT now()
+                "RecipientId" integer NULL REFERENCES "Recipients"("Id") ON DELETE RESTRICT,
+                "CreatedAt" timestamptz NOT NULL DEFAULT now(),
+                CONSTRAINT "CK_AppUsers_Observer_Recipient" CHECK ("Role" <> 'Observer' OR "RecipientId" IS NOT NULL)
             )
             """, ct);
     }
