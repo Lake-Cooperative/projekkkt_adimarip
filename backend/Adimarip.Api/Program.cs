@@ -44,4 +44,5 @@ if (!string.IsNullOrWhiteSpace(databaseConnection))
 }
 
 app.MapRegistryAuth();
+app.MapRegistryDirectories();
 app.Run();
