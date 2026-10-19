@@ -1,12 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, apiBase, loadSession, saveSession, type Session } from './api';
 import './registry.css';
+import { RecipientsPanel } from './RecipientsPanel';
+import { NoticesPanel } from './NoticesPanel';
+import { NoticeDetailPanel } from './NoticeDetailPanel';
+import { CreateNoticePanel } from './CreateNoticePanel';
+import { AdminPanel } from './AdminPanel';
 
 type Section = 'notices' | 'recipients' | 'admin';
 
 export function RegistryApp() {
   const [session, setSession] = useState<Session | null>(loadSession);
   const [section, setSection] = useState<Section>('notices');
+  const [noticeView, setNoticeView] = useState<'list' | 'create' | 'detail'>('list');
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [health, setHealth] = useState<'loading' | 'ok' | 'error'>('loading');
 
   useEffect(() => {
@@ -29,7 +36,7 @@ export function RegistryApp() {
       <aside className="registry-sidebar">
         <p className="side-caption">РАБОЧЕЕ МЕСТО</p>
         {session.role !== 'AutomationEngineer' && <>
-          <button className={section === 'notices' ? 'nav active' : 'nav'} onClick={() => setSection('notices')}>▤ Реестр оповещений</button>
+          <button className={section === 'notices' ? 'nav active' : 'nav'} onClick={() => { setSection('notices'); setNoticeView('list'); }}>▤ Реестр оповещений</button>
           <button className={section === 'recipients' ? 'nav active' : 'nav'} onClick={() => setSection('recipients')}>♙ Адресаты</button>
         </>}
         {session.role === 'AutomationEngineer' && <button className="nav active" onClick={() => setSection('admin')}>⚙ Учётные записи</button>}
@@ -37,7 +44,11 @@ export function RegistryApp() {
       </aside>
       <main className="registry-main">
         <div className="page-heading"><p className="eyebrow">КООПЕРАТИВ «ОЗЕРО» / РЕЕСТР</p><h1>{section === 'notices' ? 'Оповещения' : section === 'recipients' ? 'Адресаты' : 'Управление доступом'}</h1></div>
-        <section className="panel"><h2>Рабочее место готово</h2><p>Вы вошли как {session.displayName}. Данные и действия доступны в соответствии с вашей ролью.</p></section>
+        {section === 'recipients' && <RecipientsPanel session={session} />}
+        {section === 'admin' && <AdminPanel session={session} />}
+        {section === 'notices' && noticeView === 'list' && <NoticesPanel session={session} onSelect={id => { setSelectedId(id); setNoticeView('detail'); }} onCreate={() => setNoticeView('create')} />}
+        {section === 'notices' && noticeView === 'create' && <CreateNoticePanel session={session} onBack={() => setNoticeView('list')} onSaved={id => { setSelectedId(id); setNoticeView('detail'); }} />}
+        {section === 'notices' && noticeView === 'detail' && selectedId !== null && <NoticeDetailPanel session={session} id={selectedId} onBack={() => setNoticeView('list')} />}
       </main>
     </div>}
   </div>;
