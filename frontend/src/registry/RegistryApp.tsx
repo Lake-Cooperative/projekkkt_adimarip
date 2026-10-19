@@ -11,7 +11,7 @@ type Section = 'notices' | 'recipients' | 'admin';
 
 export function RegistryApp() {
   const [session, setSession] = useState<Session | null>(loadSession);
-  const [section, setSection] = useState<Section>('notices');
+  const [section, setSection] = useState<Section>(() => loadSession()?.role === 'AutomationEngineer' ? 'admin' : 'notices');
   const [noticeView, setNoticeView] = useState<'list' | 'create' | 'detail'>('list');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [health, setHealth] = useState<'loading' | 'ok' | 'error'>('loading');
@@ -23,7 +23,7 @@ export function RegistryApp() {
   }, []);
 
   function enter(next: Session) { saveSession(next); setSession(next); setSection(next.role === 'AutomationEngineer' ? 'admin' : 'notices'); }
-  function logout() { saveSession(null); setSession(null); }
+  function logout() { saveSession(null); setSession(null); setSection('notices'); setNoticeView('list'); setSelectedId(null); }
 
   return <div className="registry-root">
     <header className="registry-header">

@@ -19,6 +19,7 @@ export function NoticesPanel({ session, onSelect, onCreate }: { session: Session
   useEffect(() => { void api<Office[]>('/api/offices', session).then(setOffices).catch(() => setError('Не удалось загрузить подразделения')); }, [session]);
   const load = useCallback(async () => {
     setLoading(true);
+    setSelectedIds([]);
     const params = new URLSearchParams({ page: String(page), pageSize: '15' });
     if (search.trim()) params.set('search', search.trim());
     if (status) params.set('status', status);
