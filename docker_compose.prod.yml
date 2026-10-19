@@ -1,0 +1,68 @@
+# A separate HTTPS deployment profile. Requires real domain + secure .env secrets.
+name: adimarip-prod
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-adimarip}
+      POSTGRES_USER: ${POSTGRES_USER:-adimarip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8081
+      ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB:-adimarip};Username=${POSTGRES_USER:-adimarip};Password=${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD}
+      Jwt__Key: ${JWT_SECRET:?Configure random JWT_SECRET of 32+ bytes}
+      Demo__Enabled: "false"
+      Bootstrap__Username: ${BOOTSTRAP_ADMIN_USERNAME:-}
+      Bootstrap__Password: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+    expose:
+      - "8081"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ""
+    restart: unless-stopped
+    depends_on:
+      - backend
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set public DNS name}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
