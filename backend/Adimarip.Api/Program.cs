@@ -21,13 +21,12 @@ builder.Services.AddRateLimiter(options =>
         }));
 });
 
-// The registry requires PostgreSQL; failing early gives a clear deployment error.
 var databaseConnection = builder.Configuration.GetConnectionString("Default");
 if (string.IsNullOrWhiteSpace(databaseConnection))
     throw new InvalidOperationException("ConnectionStrings:Default is required.");
 builder.Services.AddDbContext<AdimaripDbContext>(options => options.UseNpgsql(databaseConnection));
 
-// Cross-origin requests are for local development. Production traffic is same-origin.
+// for local development
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? (builder.Environment.IsDevelopment() ? new[] { "http://localhost:8080", "http://localhost:5173" } : []);
 builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>

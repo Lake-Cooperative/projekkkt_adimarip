@@ -93,7 +93,11 @@ public static class NoticeRoutes
         {
             var number = input.Number?.Trim() ?? "";
             var reason = input.Reason?.Trim() ?? "";
-            var created = input.CreatedAt ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var created = input.CreatedAt ?? today;
+            // Дата создания не может быть ранее чем три дня назад.
+            if (created < today.AddDays(-3))
+                return Results.BadRequest(new { error = "Дата создания не может быть ранее чем три дня назад" });
             if (number.Length is < 3 or > 100 || reason.Length is < 1 or > 1000 ||
                 input.Comment?.Length > 4000 || !input.ProcessingDeadline.HasValue ||
                 input.ProcessingDeadline.Value < created)

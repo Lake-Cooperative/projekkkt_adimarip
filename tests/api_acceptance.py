@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import time
+from datetime import date, timedelta
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -33,6 +34,10 @@ def request(path, method='GET', payload=None, token=None, status=200):
 def login(user):
     return request('/api/auth/login', method='POST', payload={'username': user, 'password': PASSWORD})['token']
 
+def day(offset=0):
+    return (date.today() + timedelta(days=offset)).isoformat()
+
+
 def main():
     request('/api/health')
     request('/api/notices', status=401)
@@ -49,8 +54,10 @@ def main():
     assert recipients and offices, 'Demo directories were not seeded'
     stamp = f'CHECK-{int(time.time())}'
     invalid = {'number': stamp, 'recipientId': recipients[0]['id'], 'officeId': offices[0]['id'],
-               'createdAt': '2026-01-01', 'processingDeadline': '2026-01-04', 'reason': ''}
+               'createdAt': day(), 'processingDeadline': day(3), 'reason': ''}
     request('/api/notices', 'POST', invalid, operator, 400)
+    # Дата создания ранее чем три дня назад запрещена.
+    request('/api/notices', 'POST', {**invalid, 'reason': 'Слишком старая дата', 'createdAt': day(-4)}, operator, 400)
     valid = {**invalid, 'reason': 'Автоматический тест'}
     created = request('/api/notices', 'POST', valid, operator, 201)
     nid = created['id']
@@ -97,7 +104,7 @@ def main():
     assert owner_a != owner_b
     second_notice = request('/api/notices', 'POST', {
         'number': f'OBS-{stamp}', 'recipientId': owner_b, 'officeId': offices[0]['id'],
-        'createdAt': '2026-01-01', 'processingDeadline': '2026-01-02',
+        'createdAt': day(), 'processingDeadline': day(1),
         'reason': 'Оповещение для второго получателя'
     }, operator, 201)['id']
     observer_b = login(username_b)
