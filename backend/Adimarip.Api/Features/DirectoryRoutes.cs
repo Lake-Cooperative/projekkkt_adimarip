@@ -81,7 +81,7 @@ public static class DirectoryRoutes
             {
                 return Results.Conflict(new { error = "Не удалось сохранить: идентификатор уже существует или данные некорректны" });
             }
-        }).RequireAuthorization(SecuritySetup.Writer);
+        }).RequireAuthorization(SecuritySetup.Engineer);
         return app;
     }
 }

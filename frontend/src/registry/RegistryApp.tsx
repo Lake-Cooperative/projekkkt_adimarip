@@ -40,7 +40,7 @@ export function RegistryApp() {
     <header className="registry-header">
       <div className="registry-brand"><span className="registry-monogram">А</span><div><strong>АДИМАРИП</strong><small>Единый реестр оповещений · учебная версия</small></div></div>
       <div className="header-end"><span className={`service-badge ${health}`}>● API {health === 'ok' ? 'подключён' : health === 'loading' ? 'проверка' : 'не доступен'}</span>
-        {session && <><span className="account-name">{session.displayName} · {session.role}</span><button className="button ghost" onClick={logout}>Выйти</button></>}
+        {session && <><span className="account-name">{session.role === 'Observer' ? (session.surname || session.displayName) : session.displayName} · {session.role}{session.role === 'Observer' && session.recipientId ? ` · ID ${session.recipientId}` : ''}</span><button className="button ghost" onClick={logout}>Выйти</button></>}
       </div>
     </header>
     {!session ? <Login onLogin={enter} /> : <div className="registry-layout">

@@ -40,7 +40,7 @@ public static class SecuritySetup
         return services;
     }
 
-    public static object CreateToken(AppUser account, IConfiguration config)
+    public static object CreateToken(AppUser account, IConfiguration config, string? recipientFullName = null)
     {
         var claims = new List<Claim>
         {
@@ -63,9 +63,15 @@ public static class SecuritySetup
             expiresAt = expiry,
             username = account.Username,
             displayName = account.DisplayName,
-            role = account.Role
+            role = account.Role,
+            recipientId = account.RecipientId,
+            // Observer's surname comes from the bound recipient (first word of the full name, "Фамилия Имя Отчество").
+            surname = SurnameOf(recipientFullName ?? account.DisplayName)
         };
     }
+
+    public static string SurnameOf(string fullName) =>
+        fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? fullName;
 
     public static int? CurrentRecipientId(this ClaimsPrincipal user)
     {

@@ -23,7 +23,7 @@ public static class DemoSeed
         {
             person = new Recipient
             {
-                ExternalIdentifier = "DEMO-001", FullName = "Алексей Примеров", DateOfBirth = new DateOnly(2001, 4, 12),
+                ExternalIdentifier = "DEMO-001", FullName = "Примеров Алексей Сергеевич", DateOfBirth = new DateOnly(2001, 4, 12),
                 Email = "demo-recipient@example.invalid", Phone = "+70000000000",
                 Address = new Address { Region = "Тестовый регион", City = "Учебный город", Street = "Примерная", House = "1" }
             };

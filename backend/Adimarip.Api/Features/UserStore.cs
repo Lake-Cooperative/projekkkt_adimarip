@@ -16,7 +16,7 @@ public sealed class UserStore(AdimaripDbContext db)
         try
         {
             await using var command = db.Database.GetDbConnection().CreateCommand();
-            command.CommandText = "SELECT \"Username\",\"DisplayName\",\"Role\",\"RecipientId\",\"PasswordHash\" FROM \"AppUsers\" WHERE \"Username\"=@username";
+            command.CommandText = "SELECT \"Username\",\"DisplayName\",\"Role\",\"RecipientId\",\"PasswordHash\" FROM \"AppUsers\" WHERE lower(\"Username\")=lower(@username) ORDER BY (\"Username\"=@username) DESC LIMIT 1";
             AddParameter(command, "username", username);
             await using var reader = await command.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct)) return null;
