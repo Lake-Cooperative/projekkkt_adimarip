@@ -1,86 +1,103 @@
 # Реестр оповещений «АДИМАРИП»
 
-Учебный проект [кооператива «Озеро»](https://github.com/Lake-Cooperative). **Текущее состояние: чекпоинт 3 — liveable минимальный каркас.** Используются тестовые данные . 
+Учебный проект [кооператива «Озеро»](https://github.com/Lake-Cooperative) по основам ООП. Используются только вымышленные данные;
+внешняя доставка SMS/e-mail **имитируется**.
 
-## Реализовано сейчас
+**Текущее состояние (19.11.2026):** полноценный реестр с ролями и правами, массовым оповещением работников и кастомными ролями.
+Что нового — [`docs/RELEASE_70.md`](docs/RELEASE_70.md), устройство кода и паттерны — [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
+контракт API — [`docs/API.md`](docs/API.md), план — [`docs/ROADMAP_PRERELEASE.md`](docs/ROADMAP_PRERELEASE.md),
+перечень всей документации — [`docs/README.md`](docs/README.md).
 
-- ASP.NET Core 8 API с `GET /api/health`, возвращающим HTTP 200 и JSON `{"status":"ok","service":"adimarip-api"}`.
-- Swagger/OpenAPI (`/swagger` при `ASPNETCORE_ENVIRONMENT=Development`).
-- React 18 + TypeScript + Vite: оформленная главная страница и проверка состояния API.
-- Docker Compose: UI, API и PostgreSQL 16 (БД пока не содержит автоматически созданных таблиц).
-- Существующая библиотека EF Core 8 / Npgsql подключена к API **на уровне проекта и DI**. Миграции **не выполняются автоматически** (ограничение).
-- Актуализированная документация проекта и [план этапов](docs/ROADMAP.md) .
+## Возможности
 
-**Пока не реализовано:** JWT, ролевой доступ, CRUD-реестр, адресаты, статусы, история, аудит, уведомления, обращения, документы, автоматическое заполнение БД. Эти возможности будут выполнены в процессе подготовки к следующему **чекпоинту**.
+- Вход по JWT, права проверяются на сервере; четыре системные роли и **кастомные роли** из набора прав.
+- Справочники адресатов и подразделений, списание адресата с сохранением истории.
+- Реестр оповещений: создание, поиск, фильтры, пагинация, карточка, смена статуса по конечному автомату, история и аудит.
+- Уведомления по отдельным оповещениям, обращения, ссылки на документы.
+- **Массовое оповещение работников**: все / подразделения / выбранные, важность Info–Critical, фоновая приоритетная очередь,
+  параллельная доставка с повторами, резервный канал «Портал», отчёт и подтверждение получения.
 
-## Запуск всего каркаса через Docker
+## Запуск через Docker
 
-Нужен Docker Engine + Compose plugin и доступ к Docker Hub, NuGet и npm (для сборки образов).
+Нужны Docker Engine + Compose plugin и доступ к Docker Hub, NuGet и npm (для сборки образов).
 
-```powershell
-# из корня проекта
-cp .env.example .env
-```
-```powershell
-# необязательно; демонстрационные значения уже в compose
+```bash
+cp .env.example .env          # необязательно: демонстрационные значения уже заданы в compose
 docker compose -f docker_compose.yml up --build
 ```
 
 | Компонент | URL |
 |---|---|
-| Главная страница | http://localhost:8080 |
+| Интерфейс | http://localhost:8080 |
 | API | http://localhost:8081 |
-| Health check | http://localhost:8081/api/health |
+| Health / Readiness | http://localhost:8081/api/health, http://localhost:8081/api/ready |
 | Swagger (Development) | http://localhost:8081/swagger |
 
-Проверка:
+Миграции БД применяются автоматически при старте API.
 
-```bash
-curl -i http://localhost:8081/api/health
-bash tests/health-smoke.sh
-```
+### Демо-учётные записи (`DEMO_ENABLED=true`)
 
-Ожидается HTTP 200, `status: ok`. Если React показывает «API недоступен», проверьте, что backend запущен на порту `8081` и браузер открыт на `localhost:8080` (CORS разрешён для 8080 и 5173).
+Пароль — значение `DEMO_PASSWORD` (по умолчанию `demo-password-change-me`).
 
-Остановка: `docker compose -f docker_compose.yml down` (данные volume сохраняются). Для полного удаления **тестового** тома: `docker compose -f docker_compose.yml down -v`.
+| Логин | Роль | Что показать |
+|---|---|---|
+| `operator` | Секретарь | реестр, создание оповещений, статусы, массовое оповещение |
+| `manager` | Управитель | всё, что у секретаря, + журнал аудита |
+| `observer` | Служащий | только свои оповещения, баннер срочных, «Ознакомлен(а)» |
+| `engineer` | Инженер автоматизации | учётные записи, кастомные роли |
+| `duty` | Дежурный по безопасности (кастомная) | реестр и массовые оповещения без права создавать записи |
+
+Остановка: `docker compose -f docker_compose.yml down` (данные сохраняются), полное удаление тестового тома — `down -v`.
 
 ## Разработка без Docker
 
-Нужны .NET SDK 8, Node.js 20+/22, npm; при первом запуске требуется доступ к NuGet/npm.
-
-Терминал 1:
+Нужны .NET SDK 8, Node.js 20+, PostgreSQL 16.
 
 ```bash
+# backend (строка подключения и секрет — через переменные окружения)
+export ConnectionStrings__Default="Host=localhost;Database=adimarip;Username=adimarip;Password=..."
+export Jwt__Key="минимум-32-байта-случайного-секрета" Demo__Enabled=true Demo__Password=demo-password-change-me
 dotnet run --project backend/Adimarip.Api/Adimarip.Api.csproj --launch-profile Adimarip.Api
+
+# frontend
+cd frontend && npm install && npm run dev      # http://localhost:5173, /api проксируется на :8081
 ```
 
-Терминал 2:
+## Проверки
 
 ```bash
-cd frontend
-npm install
-npm run dev
+dotnet format whitespace backend --folder --verify-no-changes   # оформление C# по .editorconfig
+dotnet build backend/Adimarip.sln -warnaserror                  # сборка без предупреждений
+dotnet test backend/Adimarip.sln                                # модульные тесты (домен, сценарии, доставка)
+cd frontend && npm ci && npm run lint && npm run format:check && npm run build   # ESLint, Prettier, типы, сборка
+python3 tests/api_acceptance.py                                 # сквозной сценарий против запущенного стека (создаёт тестовые записи)
 ```
 
-В браузере `http://localhost:5173`; UI запрашивает `http://localhost:8081/api/health`. PostgreSQL для этой ручки необязателен. Локальный запуск **не применяет миграции**.
+Исправить оформление автоматически: `dotnet format whitespace backend --folder`, `cd frontend && npm run format`.
+В CI (`.github/workflows/ci.yml`) выполняются все шаги и SQL-проверки `tests/sql/schema-verification.sql`.
 
 ## Структура
 
-- `backend/Adimarip.Api/` — ASP.NET Core 8 API;
-- `frontend/` — React / TypeScript / Vite;
-- `adimarip-efcore/Adimarip.Data/` — ранее добавленные сущности и черновая миграция;
-- `docs/` — бизнес-, системные требования, Use Cases, ERD и ROADMAP;
-- `tests/health-smoke.sh` — HTTP smoke test;
-- `docker_compose.yml` — контейнеризация для семинара 2.
+```
+backend/
+  Adimarip.Domain/          сущности и бизнес-правила (без зависимостей)
+  Adimarip.Application/     сценарии использования и интерфейсы (порты)
+  Adimarip.Infrastructure/  EF Core + PostgreSQL, миграции, очередь рассылок, имитаторы каналов
+  Adimarip.Api/             HTTP-эндпоинты, JWT, проверка прав
+  Adimarip.Tests/           модульные тесты xUnit
+frontend/src/
+  api/ hooks/ components/ shared/ app/ features/{notices,broadcasts,recipients,admin}
+docs/       требования, ТЗ, ERD, архитектура, roadmap, заметки к выпускам
+tests/      API-приёмка, SQL-проверки
+deploy/     Caddyfile для prod-профиля (HTTPS)
+```
 
-## Дальнейшее развитие и ограничения
+## Ограничения
 
-Требования и правила ролей см. в [`business_requirements.md`](docs/business_requirements.md), [`system_requirements.md`](docs/system_requirements.md), [`UseCases_AND_Functions.md`](docs/UseCases_AND_Functions.md). ERD согласована с фактическими C#-моделями: [`erd.md`](docs/erd.md). Ход работы по контрольным точкам: [`seminar-2-status.md`](docs/seminar-2-status.md), [`ROADMAP.md`](docs/ROADMAP.md).
-
-Исходные EF миграция и снимок модели подлежат проверке/приведению к каноническому виду перед применением к БД. **Реальной отправки** SMS/e-mail и хранения файлов не планируется (в рамках лабораторных работ); данные исключительно тестовые. Демонстрационные пароли из Compose **не годятся** для продакшна (введенное ограничение). 
+Реальной отправки SMS/e-mail и хранения файлов нет — только имитация и метаданные. Демонстрационные пароли и секреты
+из Compose **не годятся** для внешнего развёртывания: см. [`docs/PRODUCTION_DEPLOYMENT.md`](docs/PRODUCTION_DEPLOYMENT.md).
+В prod-профиле демо-режим выключен, поэтому уведомления и массовые оповещения отвечают `501`.
 
 ## Лицензия
 
-Лицензия была выбрана советом [кооператива «Озеро»](https://github.com/Lake-Cooperative). Основная причина - данная лицензия полностью соответствует принципам участникам команды в области разработки и открытого кода.
-
-[LICENSE](LICENSE)
+Лицензия выбрана советом [кооператива «Озеро»](https://github.com/Lake-Cooperative): [LICENSE](LICENSE).
