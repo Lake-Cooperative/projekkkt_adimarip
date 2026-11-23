@@ -17,11 +17,11 @@
 
 Нужен Docker Engine + Compose plugin и доступ к Docker Hub, NuGet и npm (для сборки образов).
 
-```bash
+```powershell
 # из корня проекта
 cp .env.example .env
 ```
-``` bash
+```powershell
 # необязательно; демонстрационные значения уже в compose
 docker compose -f docker_compose.yml up --build
 ```
