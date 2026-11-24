@@ -11,15 +11,21 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Build backend and EF Core model
-        run: dotnet build backend/Adimarip.Api/Adimarip.Api.csproj --configuration Release
+      - name: Check C# formatting (.editorconfig)
+        run: dotnet format whitespace backend --folder --verify-no-changes
+      - name: Build backend (all layers, warnings are errors)
+        run: dotnet build backend/Adimarip.sln --configuration Release -warnaserror
+      - name: Unit tests (domain, use cases, delivery)
+        run: dotnet test backend/Adimarip.sln --configuration Release --no-build --logger "console;verbosity=normal"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build frontend
+      - name: Lint, format check and build frontend
         working-directory: frontend
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
+          npm run lint -- --max-warnings 0
+          npm run format:check
           npm run build
       - name: Check Python scripts
         run: python3 -m py_compile tests/api_acceptance.py

@@ -1,8 +1,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json ./
-# Exact dependency versions are pinned in package.json; first install needs npm registry access.
-RUN npm install --no-audit --no-fund
+COPY package.json package-lock.json ./
+# Версии зафиксированы в package-lock.json; npm ci ставит ровно их.
+RUN npm ci --no-audit --no-fund
 COPY . ./
 ARG VITE_API_URL=
 ENV VITE_API_URL=$VITE_API_URL

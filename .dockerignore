@@ -10,5 +10,5 @@ adimarip_work
 .gitignore
 LICENSE
 docs
-frontend
+tests
 *.zip
