@@ -5,7 +5,8 @@ FROM information_schema.tables
 WHERE table_schema = 'public'
   AND table_name IN ('AppUsers','Recipients','Addresses','Offices','Notices',
                      'NoticeStatusHistories','AuditEvents','Notifications',
-                     'DeliveryAttempts','Appeals','Documents','RecipientArchives')
+                     'DeliveryAttempts','Appeals','Documents','RecipientArchives',
+                     'Roles','RolePermissions','Broadcasts')
 ORDER BY table_name;
 
 SELECT "CurrentStatus", COUNT(*) AS notice_count
@@ -40,3 +41,22 @@ SELECT "MigrationId" FROM "__EFMigrationsHistory" ORDER BY "MigrationId";
 SELECT "Number", count(*) AS duplicates FROM "Notices" GROUP BY "Number" HAVING count(*) > 1;
 SELECT "ExternalIdentifier", count(*) AS duplicates FROM "Recipients"
 GROUP BY "ExternalIdentifier" HAVING count(*) > 1;
+
+-- Every account refers to an existing role (FK) and system roles are present.
+SELECT "Name", "IsSystem", (SELECT count(*) FROM "RolePermissions" p WHERE p."RoleName" = r."Name") AS permissions
+FROM "Roles" r ORDER BY "IsSystem" DESC, "Name";
+SELECT u."Username" FROM "AppUsers" u LEFT JOIN "Roles" r ON r."Name" = u."Role" WHERE r."Name" IS NULL;
+
+-- Finished broadcasts must not keep pending notifications.
+SELECT b."Code", count(*) AS pending_notifications
+FROM "Broadcasts" b
+JOIN "Notices" n ON n."BroadcastId" = b."Id"
+JOIN "Notifications" x ON x."NoticeId" = n."Id"
+WHERE b."Status" IN ('Completed','CompletedWithErrors') AND x."Status" = 'Pending'
+GROUP BY b."Code";
+
+-- Broadcast summary counters match the per-notice notices count.
+SELECT b."Code", b."TargetCount", count(n."Id") AS notices
+FROM "Broadcasts" b LEFT JOIN "Notices" n ON n."BroadcastId" = b."Id"
+GROUP BY b."Id", b."Code", b."TargetCount"
+HAVING count(n."Id") <> b."TargetCount";

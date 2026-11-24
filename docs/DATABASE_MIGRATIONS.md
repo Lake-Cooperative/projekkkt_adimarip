@@ -6,6 +6,10 @@
 - Индексы и ограничения: `202610160002_QueryIndexes`, `202610160003_DomainChecks`.
 - Архив адресатов: `202610160004_RecipientArchives`.
 - Учётные записи: `202610190005_AppUsers` (включает миграцию ранее вручную созданной таблицы).
+- Кастомные роли и массовое оповещение: `202611190006_RolesAndBroadcasts` — таблицы `Roles`, `RolePermissions`, `Broadcasts`;
+  столбцы `Notices.BroadcastId`, `Notifications.Status`/`LastError`, `Recipients.OfficeId`; CHECK на список ролей в `AppUsers`
+  заменён внешним ключом `FK_AppUsers_Roles_Role`. Файлы миграций лежат в `backend/Adimarip.Infrastructure/Persistence/Migrations`.
+- Оптимистическая блокировка `Notices` использует системный столбец PostgreSQL `xmin` — отдельной миграции не требует.
 
 На стартовом этапе приложение применяет новые миграции через `Database.MigrateAsync()`.
 Это упрощает учебное развёртывание. Для промышленного обновления необходимо

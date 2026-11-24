@@ -1,14 +1,26 @@
-# ASP.NET Core API — семинар 2
+# Backend АДИМАРИП (ASP.NET Core 8)
 
-Из корня репозитория:
+Слои и правило зависимостей — в [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
 
 ```bash
+dotnet build backend/Adimarip.sln
+dotnet test backend/Adimarip.sln
 dotnet run --project backend/Adimarip.Api/Adimarip.Api.csproj --launch-profile Adimarip.Api
-curl -i http://localhost:8081/api/health
 ```
 
-Требуется .NET SDK 8 и доступ к NuGet при первом восстановлении пакетов. Ожидаемый ответ: HTTP 200, `{"status":"ok","service":"adimarip-api"}`. Swagger включён в режиме Development: `http://localhost:8081/swagger`.
+## Конфигурация
 
-Библиотека `adimarip-efcore/Adimarip.Data` уже присутствовала во входном проекте. `AdimaripDbContext` регистрируется только при заданной `ConnectionStrings__Default`, но **миграции автоматически не применяются**, ни одной ручки CRUD и JWT пока нет. Перед применением миграций в следующем семинаре требуется нормализовать исходный EF snapshot/metadata и протестировать схему.
+| Ключ | Назначение |
+|---|---|
+| `ConnectionStrings__Default` | строка подключения PostgreSQL (обязательно) |
+| `Jwt__Key` | секрет подписи JWT, не короче 32 байт (обязательно) |
+| `Demo__Enabled`, `Demo__Password` | демо-данные и имитация доставки |
+| `Bootstrap__Username`, `Bootstrap__Password` | первый инженер автоматизации для prod-профиля |
+| `Delivery__MaxParallelism` (16), `Delivery__BatchSize` (100), `Delivery__Consumers` (2), `Delivery__MaxAttempts` (3), `Delivery__RetryBaseDelayMs` (50) | массовая доставка |
+| `Delivery__Simulation__LatencyMs` (15), `Delivery__Simulation__TransientFailureRate` (0) | параметры имитации каналов |
+| `Cors__AllowedOrigins__N` | разрешённые источники для локальной разработки |
 
-Разрешённые CORS-источники по умолчанию: `http://localhost:8080` и `http://localhost:5173`; в Compose переопределяются переменными окружения.
+## Миграции
+
+Миграции версионные и пишутся вручную (`Infrastructure/Persistence/Migrations`), снимок модели — заглушка
+(см. [`docs/DATABASE_MIGRATIONS.md`](../docs/DATABASE_MIGRATIONS.md)). При старте API применяются только недостающие версии.

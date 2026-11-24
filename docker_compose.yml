@@ -1,4 +1,4 @@
-# Семинар 2: React shell :8080 / ASP.NET Core health API :8081 / PostgreSQL 16 (internal)
+# UI :8080 / ASP.NET Core API :8081 / PostgreSQL 16 (internal)
 name: adimarip
 services:
   db:
@@ -32,6 +32,10 @@ services:
       Jwt__Key: ${JWT_SECRET:-LOCAL_DEMO_CHANGE_THIS_JWT_SIGNING_KEY_32CHARS_MIN}
       Demo__Enabled: ${DEMO_ENABLED:-true}
       Demo__Password: ${DEMO_PASSWORD:-demo-password-change-me}
+      # Имитация доставки: параллелизм рассылки и доля временных сбоев (для демонстрации повторов).
+      Delivery__MaxParallelism: ${DELIVERY_PARALLELISM:-16}
+      Delivery__Simulation__LatencyMs: ${DELIVERY_LATENCY_MS:-15}
+      Delivery__Simulation__TransientFailureRate: ${DELIVERY_FAILURE_RATE:-0}
       Cors__AllowedOrigins__0: http://localhost:8080
       Cors__AllowedOrigins__1: http://localhost:5173
     ports:
