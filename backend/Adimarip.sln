@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adimarip.Domain", "Adimarip.Domain\Adimarip.Domain.csproj", "{BAC92CF7-0A91-443B-9477-C864D04C029E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adimarip.Application", "Adimarip.Application\Adimarip.Application.csproj", "{55349970-8429-4134-819A-D6B73C70B304}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adimarip.Infrastructure", "Adimarip.Infrastructure\Adimarip.Infrastructure.csproj", "{B7DEAE10-0935-43D0-B654-8381D6AAF830}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adimarip.Api", "Adimarip.Api\Adimarip.Api.csproj", "{0587084D-8E9D-400C-AFAD-F009C1E0ABDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adimarip.Tests", "Adimarip.Tests\Adimarip.Tests.csproj", "{3E1C6740-3167-4482-850B-56C084650862}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BAC92CF7-0A91-443B-9477-C864D04C029E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAC92CF7-0A91-443B-9477-C864D04C029E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAC92CF7-0A91-443B-9477-C864D04C029E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAC92CF7-0A91-443B-9477-C864D04C029E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55349970-8429-4134-819A-D6B73C70B304}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55349970-8429-4134-819A-D6B73C70B304}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55349970-8429-4134-819A-D6B73C70B304}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{55349970-8429-4134-819A-D6B73C70B304}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7DEAE10-0935-43D0-B654-8381D6AAF830}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7DEAE10-0935-43D0-B654-8381D6AAF830}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7DEAE10-0935-43D0-B654-8381D6AAF830}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7DEAE10-0935-43D0-B654-8381D6AAF830}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0587084D-8E9D-400C-AFAD-F009C1E0ABDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0587084D-8E9D-400C-AFAD-F009C1E0ABDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0587084D-8E9D-400C-AFAD-F009C1E0ABDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0587084D-8E9D-400C-AFAD-F009C1E0ABDC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E1C6740-3167-4482-850B-56C084650862}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E1C6740-3167-4482-850B-56C084650862}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E1C6740-3167-4482-850B-56C084650862}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E1C6740-3167-4482-850B-56C084650862}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Ядро предметной области: не зависит ни от EF Core, ни от ASP.NET Core. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Adimarip.Domain</RootNamespace>
+  </PropertyGroup>
+</Project>

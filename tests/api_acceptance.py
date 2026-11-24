@@ -2,6 +2,7 @@
 """Integration smoke test for the fictional ADIMARIP demo.
 Requires running docker compose stack with DEMO_ENABLED=true.
 Does not run automatically and creates test notice rows when executed.
+Covers roles, observer isolation, statuses, audit, custom roles and mass alerts (broadcasts).
 """
 import json
 import os
@@ -124,7 +125,73 @@ def main():
     # An Observer cannot mutate another person's data either.
     request('/api/notices', 'POST', {'number': f'BAD-{stamp}'}, observer_b, 403)
     request(f'/api/notices/{second_notice}/status', 'PATCH', {'status': 'Sent'}, observer, 403)
-    print(f'OK: {checks} HTTP checks passed. Test notice ID: {nid}; observer isolation verified.')
+
+    check_custom_roles(engineer, stamp)
+    check_broadcast(manager, observer, observer_b, offices[0]['id'], owner_a, owner_b, stamp)
+    print(f'OK: {checks} HTTP checks passed. Test notice ID: {nid}; observer isolation, custom roles and mass alerts verified.')
+
+
+def check_custom_roles(engineer, stamp):
+    """Инженер собирает роль из прав; изменение роли действует без повторного входа."""
+    catalog = request('/api/permissions', token=engineer)
+    assert any(p['code'] == 'BroadcastsSend' for p in catalog), 'Permission catalog is incomplete'
+    roles = {r['name']: r for r in request('/api/roles', token=engineer)}
+    assert {'Operator', 'Manager', 'Observer', 'AutomationEngineer'} <= roles.keys(), 'System roles are missing'
+    assert roles['Observer']['scope'] == 'Own' and roles['Manager']['scope'] == 'All'
+
+    role_name = 'Duty' + stamp.replace('-', '')
+    role = request('/api/roles', 'POST', {'name': role_name, 'displayName': 'Дежурный (тест)',
+                                          'permissions': ['NoticesReadAll', 'BroadcastsView']}, engineer, 201)
+    assert role['scope'] == 'All' and not role['isSystem']
+    request('/api/roles', 'POST', {'name': role_name, 'displayName': 'Дубликат', 'permissions': ['NoticesReadAll']}, engineer, 409)
+    request('/api/roles', 'POST', {'name': 'Bad1', 'displayName': 'Плохая', 'permissions': ['DropDatabase']}, engineer, 400)
+    request('/api/roles/Manager', 'PUT', {'displayName': 'Взлом', 'permissions': ['AuditView']}, engineer, 409)
+
+    username = f'duty_{stamp}'.lower()
+    request('/api/admin/users', 'POST', {'username': username, 'displayName': 'Дежурный Тест',
+                                         'role': role_name, 'password': PASSWORD}, engineer, 201)
+    duty = login(username)
+    request('/api/notices', token=duty)
+    request('/api/notices', 'POST', {'number': f'DUTY-{stamp}'}, duty, 403)
+    request(f'/api/roles/{role_name}', 'DELETE', token=engineer, status=409)  # роль назначена пользователю
+
+    request(f'/api/roles/{role_name}', 'PUT', {'displayName': 'Дежурный (тест)', 'permissions': ['BroadcastsView']}, engineer)
+    request('/api/notices', token=duty, status=403)  # права отозваны сразу
+    request('/api/broadcasts', token=duty)
+
+
+def check_broadcast(manager, observer, observer_b, office_id, owner_a, owner_b, stamp):
+    """Массовое оповещение: 202, фоновая доставка, отчёт, подтверждение получения работником."""
+    preview = request('/api/broadcasts/preview', 'POST', {'kind': 'All'}, manager)
+    assert preview['recipients'] >= 2
+    payload = {'title': f'Учебная тревога {stamp}', 'message': 'Проверка массового оповещения',
+               'severity': 'Critical', 'channels': ['Email'], 'officeId': office_id,
+               'audience': {'kind': 'Recipients', 'recipientIds': [owner_a, owner_b]}}
+    request('/api/broadcasts', 'POST', payload, observer, 403)
+    request('/api/broadcasts', 'POST', {**payload, 'channels': ['Pigeon']}, manager, 400)
+    request('/api/broadcasts', 'POST', {**payload, 'audience': {'kind': 'Offices', 'officeIds': []}}, manager, 400)
+
+    created = request('/api/broadcasts', 'POST', payload, manager, 202)
+    assert created['targetCount'] == 2 and created['plannedNotifications'] >= 2
+    deadline = time.time() + 30
+    while True:
+        report = request(f"/api/broadcasts/{created['id']}", token=manager)
+        if report['broadcast']['status'] in ('Completed', 'CompletedWithErrors'):
+            break
+        assert time.time() < deadline, 'Broadcast was not dispatched within 30 s'
+        time.sleep(0.5)
+    progress = report['progress']
+    assert progress['total'] == 2 and progress['delivered'] == 2 and progress['pending'] == 0, progress
+
+    mine = request(f"/api/notices?search={created['code']}", token=observer_b)
+    assert mine['total'] == 1 and mine['items'][0]['severity'] == 'Critical'
+    alert = mine['items'][0]['id']
+    assert request(f'/api/notices/{alert}', token=observer_b)['canAcknowledge'] is True
+    request(f'/api/notices/{alert}/acknowledge', 'POST', token=observer, status=404)  # чужое
+    assert request(f'/api/notices/{alert}/acknowledge', 'POST', token=observer_b)['currentStatus'] == 'Read'
+    request(f'/api/notices/{alert}/acknowledge', 'POST', token=observer_b, status=409)
+    assert request(f"/api/broadcasts/{created['id']}", token=manager)['progress']['acknowledged'] == 1
+    request(f"/api/broadcasts/{created['id']}", token=observer, status=403)
 
 if __name__ == '__main__':
     try:

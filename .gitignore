@@ -19,3 +19,4 @@ Thumbs.db
 # Runtime
 *.log
 coverage/
+__pycache__/

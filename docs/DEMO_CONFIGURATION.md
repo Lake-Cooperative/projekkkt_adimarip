@@ -16,9 +16,14 @@ DEMO_PASSWORD=another_unique_long_password
 ASPNETCORE_ENVIRONMENT=Development
 ```
 
-Данные `DemoSeed` содержат вымышленные ФИО, телефоны и адреса. Четыре
-учебных аккаунта: `operator`, `manager`, `observer`, `engineer`; пароль
-равен `DEMO_PASSWORD`. Пароли хранятся в PostgreSQL в виде PBKDF2-хешей.
+Демо-данные (`Infrastructure/Startup/DemoDataTask.cs`) содержат вымышленные ФИО, телефоны и адреса:
+два подразделения и восемь работников для показа массового оповещения (у одного нет контактов — сработает
+портал, у одного «сбойный» e-mail `fail-mailbox@…` — будет видна ошибка в отчёте). Пять учебных аккаунтов:
+`operator`, `manager`, `observer`, `engineer` и `duty` (кастомная роль «Дежурный по безопасности»); пароль
+равен `DEMO_PASSWORD`. Пароли хранятся в PostgreSQL в виде PBKDF2-хешей. Повторный запуск ничего не дублирует.
+
+Параметры имитации доставки: `DELIVERY_PARALLELISM`, `DELIVERY_LATENCY_MS`, `DELIVERY_FAILURE_RATE`
+(доля временных сбоев 0–1; например, `0.3` наглядно покажет повторы попыток).
 
 Перед размещением в интернете: установите `DEMO_ENABLED=false`, удалите
 тестовые аккаунты и данные, замените все секреты, включите HTTPS,
