@@ -1,25 +1,35 @@
-# Сборка для хостингов с Nixpacks (netrun, Railway и т.п.), если они не используют корневой Dockerfile.
+# Сборка для хостингов с Nixpacks (netrun, Railway и т.п.).
 # Без этого файла Nixpacks берёт .NET 6 и запускает `dotnet restore` в корне, где нет проекта (ошибка MSB1003).
+# .NET 8 ставим официальным скриптом Microsoft: пакет dotnet-sdk_8 из Nix у хостинга оказался
+# предварительной версией без поддержки C# 12 (ошибки CS1525 на выражениях коллекций `[...]`).
 
 [phases.setup]
-nixPkgs = ["dotnet-sdk_8", "nodejs_20"]
+nixPkgs = ["nodejs_20"]
+aptPkgs = ["curl", "ca-certificates"]
 
 [phases.install]
 cmds = [
-  "dotnet restore backend/Adimarip.Api/Adimarip.Api.csproj",
+  "curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh",
+  "bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /opt/dotnet",
+  "/opt/dotnet/dotnet --version",
+  "/opt/dotnet/dotnet restore backend/Adimarip.Api/Adimarip.Api.csproj",
   "cd frontend && npm ci",
 ]
 
 [phases.build]
 cmds = [
   "cd frontend && VITE_API_URL= npm run build",
-  "dotnet publish backend/Adimarip.Api/Adimarip.Api.csproj -c Release -o out --no-restore",
+  "/opt/dotnet/dotnet publish backend/Adimarip.Api/Adimarip.Api.csproj -c Release -o out --no-restore",
   "mkdir -p out/wwwroot && cp -r frontend/dist/. out/wwwroot/",
 ]
 
 [start]
-cmd = "cd out && dotnet Adimarip.Api.dll"
+cmd = "cd out && /opt/dotnet/dotnet Adimarip.Api.dll"
 
 [variables]
-ASPNETCORE_FORWARDEDHEADERS_ENABLED = "true"
+DOTNET_ROOT = "/opt/dotnet"
+DOTNET_NOLOGO = "1"
 DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+# В образе может не быть библиотеки ICU; приложению хватает инвариантной культуры.
+DOTNET_SYSTEM_GLOBALIZATION_INVARIANT = "1"
+ASPNETCORE_FORWARDEDHEADERS_ENABLED = "true"
